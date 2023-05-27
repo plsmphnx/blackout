@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<meta name="viewport" content="initial-scale=1, minimum-scale=1, shrink-to-fit=no, width=device-width">
+<style>
+* {
+    font: 24pt sans-serif;
+    text-align: center;
+    vertical-align: middle;
+}
+body {
+    user-select: none;
+    margin: 0em;
+}
+table {
+    border-collapse: collapse;
+    margin: 1em auto;
+}
+td {
+    border: 0.08em solid gray;
+    width: 1.5em;
+    height: 1.5em;
+}
+#chart {
+    color: white;
+    background-color: black;
+    font-weight: bold;
+}
+#win, #lose {
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    opacity: 0.75;
+    display: none;
+    z-index: 1;
+}
+input {
+    background: transparent;
+    border: transparent;
+    font-weight: bold;
+    z-index: 2;
+}
+</style>
+<div id="win" style="color:green">&#x2713;</div>
+<div id="lose" style="color:red">&#x2717;</div>
+<table id="puzzle"></table>
+<table id="chart"></table>
+<input type="button" onclick="reset(puzzle.size - 1)" value="&#x2212;"/>
+<input type="button" onclick="reset(puzzle.size)" value="&#x27F3;"/>
+<input type="button" onclick="reset(puzzle.size + 1)" value="&#x002B;">
+<br/>
+<input id="fn" type="text" value="y"/>
+<script>
+// References to the puzzle and chart tables
+const puzzle = document.getElementById('puzzle')
+const chart = document.getElementById('chart')
+const lose = document.getElementById('lose')
+const win = document.getElementById('win')
+const fn = document.getElementById('fn')
+
+// Swap two boxes
+function swap(a, b) {
+    [a.innerText, b.innerText] = [b.innerText, a.innerText]
+}
+
+// Get all boxes
+function boxes() {
+    return Array.from(puzzle.getElementsByTagName('td'))
+}
+
+// Handle click on box
+function click() {
+    // This box can't be selected if its count has reached zero
+    if (this.count === 0) {
+        return
+    }
+
+    // If there is no active box, activate the selected box
+    if (!puzzle.active) {
+        puzzle.active = this
+        puzzle.active.style.opacity = 0.25
+        return
+    }
+
+    // If this is not the active box, swap it with the active box
+    if (this !== puzzle.active) {
+        swap(puzzle.active, this)
+        use(puzzle.active)
+        use(this)
+    }
+
+    // Reset the active box
+    puzzle.active.style.opacity = 1
+    puzzle.active = undefined
+}
+
+// Mark a box as used
+function use(box) {
+    if (!correct(box)) {
+        // If the box is wrong and has no more changes, lose
+        update(box, box.count - 1)
+        if (box.count === 0) {
+            lose.style.display = 'block'
+        }
+    }
+}
+
+// Check if a box is correct
+function correct(box) {
+    const correct = box.innerText === box.correct
+    if (correct) {
+        // If the box is correct, lock it and check for a win
+        update(box, 0)
+        if (--puzzle.count === 0) {
+            win.style.display = 'block'
+        }
+    }
+    return correct
+}
+
+// Update a box's count
+function update(box, count) {
+    box.count = count
+    box.chart.innerText = count
+    box.chart.style.opacity = count/puzzle.size
+}
+
+// Reset the puzzle
+function reset(size) {
+    if (size < 2) {
+        return
+    }
+
+    puzzle.size = size
+    puzzle.count = size*size
+    puzzle.active = undefined
+
+    win.style.display = ''
+    win.style.fontSize = `${puzzle.size}em`
+    lose.style.display = ''
+    lose.style.fontSize = `${puzzle.size}em`
+
+    const func = fn.value.replace(/(\w+\()/, 'Math.$1')
+    const init = Function('y', 'x', `return (${func})`)
+
+    puzzle.innerHTML = ''
+    chart.innerHTML = ''
+    for (let y = 0; y < puzzle.size; y++) {
+        const puzzleRow = puzzle.insertRow(y)
+        const chartRow = chart.insertRow(y)
+
+        for (let x = 0; x < puzzle.size; x++) {
+            box = puzzleRow.insertCell(x)
+            box.chart = chartRow.insertCell(x)
+            box.onclick = click.bind(box)
+            box.innerText = box.correct = `${y + 1}${x + 1}`
+            box.init = 0
+            update(box, Math.ceil(init(y + 1, x + 1)))
+        }
+    }
+
+    shuffle()
+    for (const box of boxes()) {
+        correct(box)
+    }
+}
+
+// Randomize the boxes
+function shuffle() {
+    while (true) {
+        // Randomly select two boxes that still have count available
+        const [a, b] = boxes().filter(box => box.init < box.count)
+            .sort(() => Math.random() - 0.5)
+
+        // If there aren't two boxes left to swap, we're done
+        if (!b) {
+            return
+        }
+
+        // Swap the two selected boxes
+        swap(a, b)
+        a.init++
+        b.init++
+    }
+}
+
+reset(4)
+</script>
