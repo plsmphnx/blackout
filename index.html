@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<meta name="viewport" content="initial-scale=1, minimum-scale=1, shrink-to-fit=no, width=device-width">
+<meta name="viewport" content="initial-scale=1, minimum-scale=1,
+    shrink-to-fit=no, width=device-width">
 <style>
 * {
     font: 24pt sans-serif;
@@ -120,16 +121,17 @@ function reset(size) {
         return
     }
 
+    // Reset puzzle size and display
     puzzle.size = size
     puzzle.count = size*size
     puzzle.active = undefined
-
     win.style.display = ''
     win.style.fontSize = `${puzzle.size}em`
     lose.style.display = ''
     lose.style.fontSize = `${puzzle.size}em`
 
-    const func = fn.value.replace(/(\w+\()/, 'Math.$1')
+    // Parse the chart function
+    const func = fn.value.toLowerCase().replace(/(\w+\()/, 'Math.$1')
     const init = Function('y', 'x', `return (${func})`)
 
     // Create the tables
