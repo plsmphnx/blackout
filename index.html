@@ -22,6 +22,8 @@ td {
 #chart {
     color: white;
     background-color: black;
+}
+#chart td {
     font-weight: bold;
 }
 #win, #lose {
@@ -105,15 +107,15 @@ function use(box) {
 
 // Check if a box is correct
 function correct(box) {
-    const correct = box.innerText === box.correct
-    if (correct) {
+    if (box.innerText === box.correct) {
         // If the box is correct, lock it and check for a win
         update(box, 0)
         if (--puzzle.count === 0) {
             win.style.display = 'block'
         }
+        return true
     }
-    return correct
+    return false
 }
 
 // Update a box's count
@@ -151,7 +153,8 @@ function reset(size) {
             box = puzzleRow.insertCell(x)
             box.chart = chartRow.insertCell(x)
             box.onclick = click.bind(box)
-            box.innerText = box.correct = `${y + 1}${x + 1}`
+            box.correct = `${y + 1}${x + 1}`
+            box.innerText = box.correct
             box.init = 0
             update(box, Math.ceil(init(y + 1, x + 1)))
         }
@@ -167,7 +170,8 @@ function reset(size) {
 function shuffle() {
     while (true) {
         // Randomly select two boxes that still have count available
-        const [a, b] = boxes().filter(box => box.init < box.count)
+        const [a, b] = boxes()
+            .filter(box => box.init < box.count)
             .sort(() => Math.random() - 0.5)
 
         // If there aren't two boxes left to swap, we're done
