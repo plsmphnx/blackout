@@ -51,7 +51,7 @@ input {
 <input type="button" onclick="reset(puzzle.size)" value="&#x27F3;"/>
 <input type="button" onclick="reset(puzzle.size + 1)" value="&#x002B;"/>
 <br/>
-<input id="fn" type="text" value="y" style="width:calc(100% - 2em)"/>
+<input id="fn" type="text" style="width:calc(100% - 2em)"/>
 <script>
 // References to the puzzle and chart tables
 const puzzle = document.getElementById('puzzle')
@@ -62,13 +62,15 @@ const fn = document.getElementById('fn')
 
 // Swap two boxes
 function swap(a, b) {
-    [a.innerText, b.innerText] = [b.innerText, a.innerText]
+    [a.current, b.current] = [b.current, a.current]
+    a.innerText = a.current.text
+    b.innerText = b.current.text
 }
 
 // Handle click on box
 function click() {
     // This box can't be selected if its count has reached zero
-    if (get(box).count === 0) {
+    if (this.current.count === 0) {
         return
     }
 
@@ -93,31 +95,26 @@ function click() {
 
 // Mark a box as used
 function use(box) {
-    if (box.innerText === box.correct) {
+    if (box.current === box.correct) {
         // If the box is correct, lock it and check for a win
-        update(box, 0)
-        if (--puzzle.count === 0) {
+        update(box.current, 0)
+        if (--puzzle.total === 0) {
             win.style.display = 'block'
         }
     } else {
         // If the box is wrong and has no more changes, lose
-        update(box, get(box).count - 1)
-        if (get(box).count === 0) {
+        update(box.current, box.current.count - 1)
+        if (box.current.count === 0) {
             lose.style.display = 'block'
         }
     }
 }
 
-// Get the chart box for the current puzzle box
-function get(box) {
-    return puzzle.chart[box.innerText]
-}
-
-// Update a box's count
-function update(box, count) {
-    get(box).count = count
-    get(box).innerText = count
-    get(box).style.opacity = count/puzzle.size
+// Update a chart box
+function update(chart, count) {
+    chart.count = count
+    chart.innerText = count
+    chart.style.opacity = count/puzzle.size
 }
 
 // Reset the puzzle
@@ -130,7 +127,6 @@ function reset(size) {
     // Reset puzzle size and display
     puzzle.size = size
     puzzle.total = size*size
-    puzzle.chart = {}
     puzzle.active = undefined
     win.style.display = ''
     win.style.fontSize = `${puzzle.size}em`
@@ -138,7 +134,7 @@ function reset(size) {
     lose.style.fontSize = `${puzzle.size}em`
 
     // Parse the chart function
-    const func = fn.value.toLowerCase().replace(/(\w+\()/, 'Math.$1')
+    const func = (fn.value || 'y').toLowerCase().replace(/(\w+\()/, 'Math.$1')
     const init = Function('y', 'x', `return (${func})`)
 
     // Create the tables
@@ -149,12 +145,11 @@ function reset(size) {
         const chartRow = chart.insertRow(y)
 
         for (let x = 0; x < puzzle.size; x++) {
-            box = puzzleRow.insertCell(x)
+            const box = puzzleRow.insertCell(x)
             box.onclick = click.bind(box)
-            box.correct = `${y + 1}${x + 1}`
-            box.innerText = box.correct
-            puzzle.chart[box.correct] = chartRow.insertCell(x)
-            update(box, Math.ceil(init(y + 1, x + 1)))
+            box.correct = chartRow.insertCell(x)
+            box.correct.text = `${y + 1}${x + 1}`
+            update(box.correct, Math.ceil(init(y + 1, x + 1)))
         }
     }
 
@@ -162,11 +157,11 @@ function reset(size) {
     const boxes = Array.from(puzzle.getElementsByTagName('td'))
     do {
         for (const box of boxes) {
-            box.innerText = box.correct
-            get(box).init = 0
+            box.current = box.correct
+            box.current.init = 0
         }
         shuffle(boxes)
-    } while (boxes.some(box => box.innerText === box.correct))
+    } while (boxes.some(box => box.current === box.correct))
 }
 
 // Randomize the boxes
@@ -174,7 +169,7 @@ function shuffle(boxes) {
     while (true) {
         // Randomly select two boxes that still have count available
         const [a, b] = boxes
-            .filter(box => get(box).init < get(box).count)
+            .filter(box => box.current.init < box.current.count)
             .sort(() => Math.random() - 0.5)
 
         // If there aren't two boxes left to swap, we're done
@@ -184,8 +179,8 @@ function shuffle(boxes) {
 
         // Swap the two selected boxes
         swap(a, b)
-        get(a).init++
-        get(b).init++
+        a.current.init++
+        b.current.init++
     }
 }
 
