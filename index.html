@@ -67,7 +67,7 @@ function swap(a, b) {
 // Handle click on box
 function click() {
     // This box can't be selected if its count has reached zero
-    if (this.count === 0) {
+    if (get(box).count === 0) {
         return
     }
 
@@ -100,30 +100,36 @@ function use(box) {
         }
     } else {
         // If the box is wrong and has no more changes, lose
-        update(box, box.count - 1)
-        if (box.count === 0) {
+        update(box, get(box).count - 1)
+        if (get(box).count === 0) {
             lose.style.display = 'block'
         }
     }
 }
 
+// Get the chart box for the current puzzle box
+function get(box) {
+    return puzzle.chart[box.innerText]
+}
+
 // Update a box's count
 function update(box, count) {
-    box.count = count
-    box.chart.innerText = count
-    box.chart.style.opacity = count/puzzle.size
+    get(box).count = count
+    get(box).innerText = count
+    get(box).style.opacity = count/puzzle.size
 }
 
 // Reset the puzzle
 function reset(size) {
-    // Don't allow puzzles smaller than 2x2
-    if (size < 2) {
+    // Don't allow puzzles smaller than 2x2 or larger than 9x9
+    if (size < 2 || size > 9) {
         return
     }
 
     // Reset puzzle size and display
     puzzle.size = size
-    puzzle.count = size*size
+    puzzle.total = size*size
+    puzzle.chart = {}
     puzzle.active = undefined
     win.style.display = ''
     win.style.fontSize = `${puzzle.size}em`
@@ -143,9 +149,10 @@ function reset(size) {
 
         for (let x = 0; x < puzzle.size; x++) {
             box = puzzleRow.insertCell(x)
-            box.chart = chartRow.insertCell(x)
             box.onclick = click.bind(box)
             box.correct = `${y + 1}${x + 1}`
+            box.innerText = box.correct
+            puzzle.chart[box.correct] = chartRow.insertCell(x)
             update(box, Math.ceil(init(y + 1, x + 1)))
         }
     }
@@ -155,7 +162,7 @@ function reset(size) {
     do {
         for (const box of boxes) {
             box.innerText = box.correct
-            box.init = 0
+            get(box).init = 0
         }
         shuffle(boxes)
     } while (boxes.some(box => box.innerText === box.correct))
@@ -166,7 +173,7 @@ function shuffle(boxes) {
     while (true) {
         // Randomly select two boxes that still have count available
         const [a, b] = boxes
-            .filter(box => box.init < box.count)
+            .filter(box => get(box).init < get(box).count)
             .sort(() => Math.random() - 0.5)
 
         // If there aren't two boxes left to swap, we're done
@@ -176,8 +183,8 @@ function shuffle(boxes) {
 
         // Swap the two selected boxes
         swap(a, b)
-        a.init++
-        b.init++
+        get(a).init++
+        get(b).init++
     }
 }
 
