@@ -36,6 +36,7 @@ td {
     z-index: 1;
 }
 input {
+    position: relative;
     background: transparent;
     border: transparent;
     font-weight: bold;
@@ -48,7 +49,7 @@ input {
 <table id="chart"></table>
 <input type="button" onclick="reset(puzzle.size - 1)" value="&#x2212;"/>
 <input type="button" onclick="reset(puzzle.size)" value="&#x27F3;"/>
-<input type="button" onclick="reset(puzzle.size + 1)" value="&#x002B;">
+<input type="button" onclick="reset(puzzle.size + 1)" value="&#x002B;"/>
 <br/>
 <input id="fn" type="text" value="y" style="width:calc(100% - 2em)"/>
 <script>
